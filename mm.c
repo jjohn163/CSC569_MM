@@ -73,7 +73,6 @@ void matmul(int *A, int *B, int threadNum) {
                   b = B[posB + n];
                   sum += (a*b);
                }
-               #pragma omp atomic
                result[i + (m / TILE_SIZE * M1_WIDTH) + (j + (m % TILE_SIZE)) ] += sum;
             }
          }
