@@ -58,10 +58,10 @@ void sequentialMultiply(int *matrixA, int *matrixB) {
    }
 }
 
-void matmul(int *A, int *B) {
+void matmul(int *A, int *B, int threadNum) {
    int i=0, j=0,k = 0, l = 0, m = 0, n = 0, posA = 0, posB = 0;
    int sum =0, a = 0, b = 0;
-   for(i = 0; i < M1_WIDTH * M1_WIDTH; i += TILE_SIZE * M1_WIDTH){
+   for(i = threadNum * TILE_SIZE * M1_WIDTH; i < M1_WIDTH * M1_WIDTH; i += TILE_SIZE * M1_WIDTH * numThreads){
       for(j = 0; j < M1_WIDTH; j += TILE_SIZE){
          for(k = i, l = j * M1_WIDTH; k < i + M1_WIDTH; k+= TILE_SIZE, l += TILE_SIZE){
             for(m = 0; m < TILE_SIZE * TILE_SIZE; m++){
@@ -73,6 +73,7 @@ void matmul(int *A, int *B) {
                   b = B[posB + n];
                   sum += (a*b);
                }
+               #pragma omp atomic
                result[i + (m / TILE_SIZE * M1_WIDTH) + (j + (m % TILE_SIZE)) ] += sum;
             }
          }
@@ -167,9 +168,15 @@ void runOpenMP(){
 }
 
 void runTiled(){
+   int i;
    struct timeval startTime, stopTime;
+   omp_set_num_threads(numThreads);
    gettimeofday(&startTime, (struct timezone*)0);
-   matmul(mat1, mat2T);
+   #pragma omp parallel for
+   for (i = 0; i < numThreads; i++) {
+      matmul(mat1, mat2T, i);
+   }
+   #pragma omp barrier
    gettimeofday(&stopTime, (struct timezone*)0);
 
    if (!verify()) {
