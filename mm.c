@@ -97,6 +97,8 @@ void runMPI() {
     int rowsPerWorker;
     int numberOfWorkers;
     struct timeval startTime, stopTime;
+    /*int workerResult[RESULT_LEN];*/
+
 
     MPI_Init(NULL, NULL);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
@@ -109,8 +111,6 @@ void runMPI() {
     if (my_rank != 0) {
         MPI_Recv(&rowsPerWorker, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         MPI_Recv(&offset, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Recv(&mat1, (M_LEN * M_LEN), MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        MPI_Recv(&mat2, (M_LEN * M_LEN), MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
         for (k = 0; k < M_LEN; k++) {
             for (i = 0; i < rowsPerWorker; i++) {
@@ -121,6 +121,8 @@ void runMPI() {
                 result[(i + offset) * M_LEN + k] = pValue;
             }
         }
+        MPI_Send(&offset, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
+        MPI_Send(&result[offset], (M_LEN * rowsPerWorker), MPI_INT, 0, 2, MPI_COMM_WORLD);
     }
     else {
         rowsPerWorker = M_LEN / numberOfWorkers;
@@ -129,9 +131,12 @@ void runMPI() {
         {
             MPI_Send(&rowsPerWorker, 1, MPI_INT, i, 1, MPI_COMM_WORLD);
             MPI_Send(&offset, 1, MPI_INT, i, 1, MPI_COMM_WORLD);
-            MPI_Send(&mat1, (M_LEN * M_LEN), MPI_DOUBLE, i, 1, MPI_COMM_WORLD);
-            MPI_Send(&mat2, (M_LEN * M_LEN), MPI_DOUBLE, i, 1, MPI_COMM_WORLD);
             offset = offset + rowsPerWorker;
+        }
+
+        for (i = 1; i <= numberOfWorkers; i++) {
+            MPI_Recv(&offset, 1, MPI_INT, i, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(&result[offset * M_LEN], rowsPerWorker * M_LEN, MPI_INT, i, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         }
     }
 
@@ -143,7 +148,7 @@ void runMPI() {
         printf("Incorrect Multiplication\n");
     }
     else {
-        printf("Runtime Tiled: %f s\n",
+        printf("Runtime MPI: %f s\n",
             (double)(stopTime.tv_sec + stopTime.tv_usec * 1.0e-6) -
             (startTime.tv_sec + startTime.tv_usec * 1.0e-6));
     }
