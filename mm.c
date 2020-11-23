@@ -90,10 +90,10 @@ void runTiled() {
 }
 
 void runMPI() {
-    char greeting[100];
     int comm_sz;
     int my_rank;
-    int i;
+    int i, j, k, pValue;
+    int offset;
     int rowsPerWorker;
     int numberOfWorkers;
     struct timeval startTime, stopTime;
@@ -107,16 +107,31 @@ void runMPI() {
     numberOfWorkers = comm_sz - 1;
 
     if (my_rank != 0) {
+        MPI_Recv(&rowsPerWorker, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&offset, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&mat1, (M_LEN * M_LEN), MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&mat2, (M_LEN * M_LEN), MPI_DOUBLE, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
-        sprintf(greeting, "Greetings from process %d of %d!", my_rank, comm_sz);
-        MPI_Send(greeting, strlen(greeting)+1, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
+        for (k = 0; k < M_LEN; k++) {
+            for (i = 0; i < rowsPerWorker; i++) {
+                pValue = 0;
+                for (j = 0; j < M_LEN; j++) {
+                    pValue += mat1[M_LEN * (i + offset) + j] * mat2[j * M_LEN + k];
+                }
+                result[(i + offset) * M_LEN + k] = pValue;
+            }
+        }
     }
     else {
         rowsPerWorker = M_LEN / numberOfWorkers;
+        offset = 0;
         for (i = 1; i <= numberOfWorkers; i++)
         {
             MPI_Send(&rowsPerWorker, 1, MPI_INT, i, 1, MPI_COMM_WORLD);
-            MPI_Send(&);
+            MPI_Send(&offset, 1, MPI_INT, i, 1, MPI_COMM_WORLD);
+            MPI_Send(&mat1, (M_LEN * M_LEN), MPI_DOUBLE, i, 1, MPI_COMM_WORLD);
+            MPI_Send(&mat2, (M_LEN * M_LEN), MPI_DOUBLE, i, 1, MPI_COMM_WORLD);
+            offset = offset + rowsPerWorker;
         }
     }
 
