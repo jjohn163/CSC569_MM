@@ -4,34 +4,49 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-#define M1_HEIGHT       3200
-#define M1_WIDTH        3200
-#define M2_HEIGHT       3200
-#define M2_WIDTH        3200
+#define M_LEN           3200
 
-#define RESULT_LEN      M1_HEIGHT * M2_WIDTH
+#define RESULT_LEN      M_LEN * M_LEN
 #define MAX_CELL_MAG    100
 #define TILE_SIZE       64
 
-int mat1[M1_WIDTH * M1_HEIGHT];
-int mat2[M2_WIDTH * M2_HEIGHT];
-int mat2T[M2_WIDTH * M2_HEIGHT];
+int mat1[M_LEN * M_LEN];
+int mat2[M_LEN * M_LEN];
+int mat2T[M_LEN * M_LEN];
 
 int result[RESULT_LEN];
 int solution[RESULT_LEN];
 int numThreads;
 
+
+int verify() {
+   int row, col;
+
+   for (row = 0; row < M_LEN; row++) {
+      for (col = 0; col < M_LEN; col++) {
+         if (result[row*M_LEN+col] != solution[row*M_LEN+col]) {
+            printf("**** row: %d col: %d ****\n", row, col);
+            printf("Expected: %d\n", solution[row*M_LEN+col]);
+            printf("Actual: %d\n", result[row*M_LEN+col]);
+            return 0;
+         }
+      }
+   }
+   
+   return 1;
+}
+
 void tiledMultiply(int *A, int *B, int threadNum) {
    int i = 0, j = 0, k = 0, l = 0, m = 0, n = 0, posA = 0, posB = 0;
    int sum = 0, a = 0, b = 0;
    
-   for (i = threadNum * TILE_SIZE * M1_WIDTH; i < M1_WIDTH * M1_WIDTH; i += TILE_SIZE * M1_WIDTH * numThreads) {
-      for (j = 0; j < M1_WIDTH; j += TILE_SIZE) {
-         for (k = i, l = j * M1_WIDTH; k < i + M1_WIDTH; k += TILE_SIZE, l += TILE_SIZE) {
+   for (i = threadNum * TILE_SIZE * M_LEN; i < M_LEN * M_LEN; i += TILE_SIZE * M_LEN * numThreads) {
+      for (j = 0; j < M_LEN; j += TILE_SIZE) {
+         for (k = i, l = j * M_LEN; k < i + M_LEN; k += TILE_SIZE, l += TILE_SIZE) {
             for (m = 0; m < TILE_SIZE * TILE_SIZE; m++) {
                sum = 0;
-               posA = k + (m / TILE_SIZE * M1_WIDTH);
-               posB = l + (m % TILE_SIZE * M1_WIDTH);
+               posA = k + (m / TILE_SIZE * M_LEN);
+               posB = l + (m % TILE_SIZE * M_LEN);
                
                for (n = 0; n < TILE_SIZE; n++) {
                   a = A[posA + n];
@@ -39,7 +54,7 @@ void tiledMultiply(int *A, int *B, int threadNum) {
                   sum += (a*b);
                }
                
-               result[i + (m / TILE_SIZE * M1_WIDTH) + (j + (m % TILE_SIZE)) ] += sum;
+               result[i + (m / TILE_SIZE * M_LEN) + (j + (m % TILE_SIZE)) ] += sum;
             }
          }
       }
@@ -78,20 +93,20 @@ void simpleMultiply(int threadNum) {
 
    start = threadNum * RESULT_LEN / numThreads;
    end = (threadNum + 1) * RESULT_LEN / numThreads;
-   row = start / M2_WIDTH;
-   col = start % M2_WIDTH;
+   row = start / M_LEN;
+   col = start % M_LEN;
 
    for (i = start; i < end; i++) {
       pValue = 0;
 
-      for (k = 0; k < M1_WIDTH; k++) {
-         pValue += mat1[row*M1_WIDTH+k] * mat2[k*M2_WIDTH+col];
+      for (k = 0; k < M_LEN; k++) {
+         pValue += mat1[row*M_LEN+k] * mat2[k*M_LEN+col];
       }
 
       result[i] = pValue;
 
       col++;
-      if (col == M2_WIDTH) {
+      if (col == M_LEN) {
          col = 0;
          row++;
       }
@@ -126,13 +141,13 @@ void sequentialMultiply(int *matrixA, int *matrixB) {
    int row, col, k;
    int Pvalue = 0;
 
-   for (row = 0; row < M1_HEIGHT; row++) {
-      for (col = 0; col < M2_WIDTH; col++) {
+   for (row = 0; row < M_LEN; row++) {
+      for (col = 0; col < M_LEN; col++) {
          Pvalue = 0;
-         for (k = 0; k < M1_WIDTH; k++) {
-            Pvalue += matrixA[row*M1_WIDTH+k] * matrixB[k*M2_WIDTH+col];
+         for (k = 0; k < M_LEN; k++) {
+            Pvalue += matrixA[row*M_LEN+k] * matrixB[k*M_LEN+col];
          }
-         solution[row*M2_WIDTH+col] = Pvalue;
+         solution[row*M_LEN+col] = Pvalue;
       }
    }
 }
@@ -156,27 +171,11 @@ void clear(int *array, int size){
    }
 }
 
-int verify() {
-   int row, col;
-
-   for (row = 0; row < M1_HEIGHT; row++) {
-      for (col = 0; col < M2_WIDTH; col++) {
-         if (result[row*M2_WIDTH+col] != solution[row*M2_WIDTH+col]) {
-            printf("**** row: %d col: %d ****\n", row, col);
-            printf("Expected: %d\n", solution[row*M2_WIDTH+col]);
-            printf("Actual: %d\n", result[row*M2_WIDTH+col]);
-            return 0;
-         }
-      }
-   }
-   return 1;
-}
-
 void transposeMatrix(int *matrixA, int *matrixB){
    int i, j;
-   for (i = 0; i < M1_WIDTH; i++) {
-      for (j = 0; j < M1_WIDTH; j++) {
-         matrixB[j * M1_WIDTH + i] = matrixA[i * M1_WIDTH + j];
+   for (i = 0; i < M_LEN; i++) {
+      for (j = 0; j < M_LEN; j++) {
+         matrixB[j * M_LEN + i] = matrixA[i * M_LEN + j];
       }
    }
 }
@@ -208,8 +207,8 @@ int checkArgs(int argc, char **argv) {
 int main(int argc, char **argv) {
    numThreads = checkArgs(argc, argv);
    
-   initMatrix(mat1, M1_HEIGHT * M1_WIDTH);
-   initMatrix(mat2, M2_HEIGHT * M2_WIDTH);
+   initMatrix(mat1, M_LEN * M_LEN);
+   initMatrix(mat2, M_LEN * M_LEN);
    
    transposeMatrix(mat2, mat2T);
    
