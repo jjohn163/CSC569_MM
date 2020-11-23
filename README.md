@@ -1,4 +1,5 @@
 # CSC 569 Matrix Multiply Lab
+Ryan Solorzano, Kevin Label, Joseph Johnson
 
 | Method             | Num Nodes = 1| Num Nodes = 2| Num Nodes = 4| Num Nodes = 8 | Num Nodes = 16| Num Nodes = 28|
 | :----------------  | :----------: | :----------: | :----------: | :-----------: | :-----------: | :-----------: |
