@@ -1,4 +1,5 @@
 #include <omp.h>
+#include <mpi.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -86,6 +87,51 @@ void runTiled() {
          (double) (stopTime.tv_sec + stopTime.tv_usec*1.0e-6) -
                   (startTime.tv_sec + startTime.tv_usec*1.0e-6));
    }
+}
+
+void runMPI() {
+    char greeting[100];
+    int comm_sz;
+    int my_rank;
+    int i;
+    int rowsPerWorker;
+    int numberOfWorkers;
+    struct timeval startTime, stopTime;
+
+    MPI_Init(NULL, NULL);
+    MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
+    gettimeofday(&startTime, (struct timezone*)0);
+
+    numberOfWorkers = comm_sz - 1;
+
+    if (my_rank != 0) {
+
+        sprintf(greeting, "Greetings from process %d of %d!", my_rank, comm_sz);
+        MPI_Send(greeting, strlen(greeting)+1, MPI_CHAR, 0, 0, MPI_COMM_WORLD);
+    }
+    else {
+        rowsPerWorker = M_LEN / numberOfWorkers;
+        for (i = 1; i <= numberOfWorkers; i++)
+        {
+            MPI_Send(&rowsPerWorker, 1, MPI_INT, i, 1, MPI_COMM_WORLD);
+            MPI_Send(&);
+        }
+    }
+
+    MPI_Finalize();
+
+    gettimeofday(&stopTime, (struct timezone*)0);
+
+    if (!verify()) {
+        printf("Incorrect Multiplication\n");
+    }
+    else {
+        printf("Runtime Tiled: %f s\n",
+            (double)(stopTime.tv_sec + stopTime.tv_usec * 1.0e-6) -
+            (startTime.tv_sec + startTime.tv_usec * 1.0e-6));
+    }
 }
 
 
@@ -222,6 +268,9 @@ int main(int argc, char **argv) {
    clear(result, RESULT_LEN);
    
    runOpenMP();
+   clear(result, RESULT_LEN);
+
+   runMPI();
    clear(result, RESULT_LEN);
    
    runTiled();
