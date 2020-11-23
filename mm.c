@@ -90,29 +90,19 @@ void runTiled() {
 
 
 void simpleMultiply(int threadNum) {
-   int i, k;
-   int start, end;
-   int col, row;
-   int pValue = 0;
+   int row, col, k;
+   int Pvalue = 0;
+   int stride = numThreads;
 
-   start = threadNum * RESULT_LEN / numThreads;
-   end = (threadNum + 1) * RESULT_LEN / numThreads;
-   row = start / M_LEN;
-   col = start % M_LEN;
+   for (row = threadNum; row < M_LEN; row += stride) {
+      for (col = 0; col < M_LEN; col++) {
+         Pvalue = 0;
+         
+         for (k = 0; k < M_LEN; k++) {
+            Pvalue += mat1[row*M_LEN+k] * mat2[k*M_LEN+col];
+         }
 
-   for (i = start; i < end; i++) {
-      pValue = 0;
-
-      for (k = 0; k < M_LEN; k++) {
-         pValue += mat1[row*M_LEN+k] * mat2[k*M_LEN+col];
-      }
-
-      result[i] = pValue;
-      col++;
-
-      if (col == M_LEN) {
-         col = 0;
-         row++;
+         result[row*M_LEN+col] = Pvalue;
       }
    }
 }
