@@ -154,6 +154,72 @@ void runMPI() {
     }
 }
 
+void runMPI_OpenMP() {
+    int comm_sz;
+    int my_rank;
+    int i, j, k, pValue;
+    int offset;
+    int rowsPerWorker;
+    int numberOfWorkers;
+    struct timeval startTime, stopTime;
+    /*int workerResult[RESULT_LEN];*/
+
+
+    MPI_Init(NULL, NULL);
+    MPI_Comm_size(MPI_COMM_WORLD, &comm_sz);
+    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
+
+    gettimeofday(&startTime, (struct timezone*)0);
+
+    numberOfWorkers = comm_sz - 1;
+
+    if (my_rank != 0) {
+        MPI_Recv(&rowsPerWorker, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Recv(&offset, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+       
+        #pragma omp parallel for
+        for (k = 0; k < M_LEN; k++) {
+            for (i = 0; i < rowsPerWorker; i++) {
+                pValue = 0;
+                for (j = 0; j < M_LEN; j++) {
+                    pValue += mat1[M_LEN * (i + offset) + j] * mat2[j * M_LEN + k];
+                }
+                result[(i + offset) * M_LEN + k] = pValue;
+            }
+        }
+        MPI_Send(&offset, 1, MPI_INT, 0, 2, MPI_COMM_WORLD);
+        MPI_Send(&result[offset], (M_LEN * rowsPerWorker), MPI_INT, 0, 2, MPI_COMM_WORLD);
+    }
+    else {
+        rowsPerWorker = M_LEN / numberOfWorkers;
+        offset = 0;
+        for (i = 1; i <= numberOfWorkers; i++)
+        {
+            MPI_Send(&rowsPerWorker, 1, MPI_INT, i, 1, MPI_COMM_WORLD);
+            MPI_Send(&offset, 1, MPI_INT, i, 1, MPI_COMM_WORLD);
+            offset = offset + rowsPerWorker;
+        }
+
+        for (i = 1; i <= numberOfWorkers; i++) {
+            MPI_Recv(&offset, 1, MPI_INT, i, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+            MPI_Recv(&result[offset * M_LEN], rowsPerWorker * M_LEN, MPI_INT, i, 2, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }
+    }
+
+    MPI_Finalize();
+
+    gettimeofday(&stopTime, (struct timezone*)0);
+
+    if (!verify()) {
+        printf("Incorrect Multiplication\n");
+    }
+    else {
+        printf("Runtime MPI + OMP: %f s\n",
+            (double)(stopTime.tv_sec + stopTime.tv_usec * 1.0e-6) -
+            (startTime.tv_sec + startTime.tv_usec * 1.0e-6));
+    }
+}
+
 
 void simpleMultiply(int threadNum) {
    int row, col, k;
