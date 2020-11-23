@@ -6,8 +6,8 @@
 | OpenMP             | 46.07 s      | 22.45 s      | 11.47 s      | 5.42 s        | 2.93 s        | 1.71 s        |
 | OpenMP Tiled - 64* | 14.28 s      | 7.12 s       | 3.67 s       | 2.14 s        | 1.27 s        | 0.66 s        |
 | OpenMP Tiled - 128*| 13.57 s      | 7.19 s       | 3.82 s       | 2.38 s        | 1.25 s        | 0.63 s        |
-| MPI                | 69.420 s     | 69.420 s     | 69.420 s     | 69.420 s      | 69.420 s      | 45.83 s       |
+| MPI (2 nodes)      | 32.20 s      | 32.25 s      | 32.29 s      | 31.98 s       | 32.01 s       | 31.88 s       |
+| MPI (4 nodes)      | 22.18 s      | 22.44 s      | 22.24 s      | 22.29 s       | 22.11 s       | 22.29 s       |
 | MPI + OpenMP       | 69.420 s     | 69.420 s     | 69.420 s     | 69.420 s      | 69.420 s      | 45.83 s       |
-| MPI + OpenMP Tiled*| 69.420 s     | 69.420 s     | 69.420 s     | 69.420 s      | 69.420 s      | 45.83 s       |
 
-*: These rows are for the extra credit
+*:  These 32.20re f or the32.20a credit
