@@ -36,6 +36,7 @@ int verify() {
    return 1;
 }
 
+
 void tiledMultiply(int *A, int *B, int threadNum) {
    int i = 0, j = 0, k = 0, l = 0, m = 0, n = 0, posA = 0, posB = 0;
    int sum = 0, a = 0, b = 0;
@@ -61,9 +62,11 @@ void tiledMultiply(int *A, int *B, int threadNum) {
    }
 }
 
+
 void runTiled() {
    int i;
    struct timeval startTime, stopTime;
+   
    omp_set_num_threads(numThreads);
    gettimeofday(&startTime, (struct timezone*)0);
    
@@ -85,6 +88,7 @@ void runTiled() {
    }
 }
 
+
 void simpleMultiply(int threadNum) {
    int i, k;
    int start, end;
@@ -104,8 +108,8 @@ void simpleMultiply(int threadNum) {
       }
 
       result[i] = pValue;
-
       col++;
+
       if (col == M_LEN) {
          col = 0;
          row++;
@@ -113,17 +117,19 @@ void simpleMultiply(int threadNum) {
    }
 }
 
+
 void runOpenMP() {
    int i;
    struct timeval startTime, stopTime;
 
    omp_set_num_threads(numThreads);
-
    gettimeofday(&startTime, (struct timezone*)0);
+
    #pragma omp parallel for
    for (i = 0; i < numThreads; i++) {
       simpleMultiply(i);
    }
+   
    #pragma omp barrier
    gettimeofday(&stopTime, (struct timezone*)0);
 
@@ -137,6 +143,7 @@ void runOpenMP() {
    }
 }
 
+
 void sequentialMultiply(int *matrixA, int *matrixB) {
    int row, col, k;
    int Pvalue = 0;
@@ -144,13 +151,16 @@ void sequentialMultiply(int *matrixA, int *matrixB) {
    for (row = 0; row < M_LEN; row++) {
       for (col = 0; col < M_LEN; col++) {
          Pvalue = 0;
+         
          for (k = 0; k < M_LEN; k++) {
             Pvalue += matrixA[row*M_LEN+k] * matrixB[k*M_LEN+col];
          }
+
          solution[row*M_LEN+col] = Pvalue;
       }
    }
 }
+
 
 void runSequential() {
    struct timeval startTime, stopTime;
@@ -164,6 +174,7 @@ void runSequential() {
                       (startTime.tv_sec + startTime.tv_usec*1.0e-6));
 }
 
+
 void clear(int *array, int size){
    int i;
    for (i = 0; i < size; i++) {
@@ -171,14 +182,17 @@ void clear(int *array, int size){
    }
 }
 
+
 void transposeMatrix(int *matrixA, int *matrixB){
    int i, j;
+   
    for (i = 0; i < M_LEN; i++) {
       for (j = 0; j < M_LEN; j++) {
          matrixB[j * M_LEN + i] = matrixA[i * M_LEN + j];
       }
    }
 }
+
 
 void initMatrix(int *matrix, int len) {
    int i;
@@ -187,6 +201,7 @@ void initMatrix(int *matrix, int len) {
       matrix[i] = rand() % MAX_CELL_MAG;
    }
 }
+
 
 int checkArgs(int argc, char **argv) {
    int threads;
@@ -203,6 +218,7 @@ int checkArgs(int argc, char **argv) {
 
    return threads;
 }
+
 
 int main(int argc, char **argv) {
    numThreads = checkArgs(argc, argv);
